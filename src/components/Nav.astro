@@ -1,12 +1,10 @@
 ---
 import { site } from '~/data/site';
-import Logo from '~/components/Logo.astro';
 ---
 
 <header class="hdr" data-hdr>
   <div class="hdr__inner shell">
     <a href="/" class="hdr__mark" aria-label={`${site.name} — home`}>
-      <Logo height="0.8125rem" class="hdr__logo" />
       <span>{site.name}</span>
     </a>
 
@@ -75,13 +73,10 @@ import Logo from '~/components/Logo.astro';
     font-weight: 500;
     text-decoration: none;
     letter-spacing: -0.01em;
-  }
-
-  .hdr__mark :global(.hdr__logo) {
     color: var(--color-navy);
     transition: color 0.4s var(--ease-out-soft);
   }
-  .hdr__mark:hover :global(.hdr__logo) { color: var(--color-coral); }
+  .hdr__mark:hover { color: var(--color-coral); }
 
   .hdr__cta {
     display: inline-flex;
