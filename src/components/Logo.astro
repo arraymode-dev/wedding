@@ -1,0 +1,52 @@
+---
+interface Props {
+  /** Stroke colour; defaults to the current text colour. */
+  color?: string;
+  height?: string;
+  class?: string;
+  title?: string;
+}
+
+const {
+  color = 'currentColor',
+  height = '1rem',
+  class: className = '',
+  title,
+} = Astro.props;
+
+/**
+ * STAND-IN MARK.
+ * A geometric monoline reconstruction of the FOLD wordmark, built so the site
+ * has a correct-feeling logo in every placement. Replace with the studio's
+ * original vector: drop it at `public/logo.svg` and swap this component's
+ * body for an <img>, keeping the same props.
+ */
+---
+
+<svg
+  class={className}
+  viewBox="0 0 164 44"
+  style={`height:${height};width:auto;color:${color}`}
+  role={title ? 'img' : 'presentation'}
+  aria-hidden={title ? undefined : 'true'}
+  fill="none"
+  stroke="currentColor"
+  stroke-width="4"
+  stroke-linecap="square"
+>
+  {title && <title>{title}</title>}
+
+  {/* F — stem, top arm, and a shortened middle arm with a fold gap */}
+  <path d="M4 42V2h30" />
+  <path d="M4 22h20" />
+
+  {/* O — squared bowl, corner cut where the sheet folds */}
+  <path d="M46 2h22a4 4 0 0 1 4 4v32a4 4 0 0 1-4 4H50a4 4 0 0 1-4-4V12" />
+
+  {/* L — rotated counter, open at the top right */}
+  <path d="M86 2v36a4 4 0 0 0 4 4h22V22" />
+
+  {/* D — bowl with a folded top-right corner */}
+  <path d="M126 42V2h18l16 14v22a4 4 0 0 1-4 4h-30" />
+  <path d="M144 2v16h16" stroke-width="2.5" opacity="0.55" />
+</svg>

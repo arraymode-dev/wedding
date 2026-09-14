@@ -1,0 +1,235 @@
+---
+import Base from '~/layouts/Base.astro';
+import Rail from '~/components/Rail.astro';
+import { site } from '~/data/site';
+import { services } from '~/data/services';
+---
+
+<Base
+  title={site.name}
+  description={site.blurb}
+>
+  {/* ── Masthead ──────────────────────────────────────────────────── */}
+  <section class="mast">
+    <div class="glow" aria-hidden="true"></div>
+
+    <div class="shell mast__intro" data-reveal>
+      <div class="mast__title">
+        <h1>Bespoke wedding stationery, drawn by hand</h1>
+        <p class="mast__sub">Rosie Pedley — Manchester, and wherever the wedding is</p>
+      </div>
+
+      <p class="mast__blurb">
+        Destination suites, custom illustration and everything the day itself
+        needs. Every project starts on a blank page; no design is ever used twice.
+      </p>
+    </div>
+  </section>
+
+  {/* ── Work rail ─────────────────────────────────────────────────── */}
+  <Rail />
+
+  <div class="shell">
+    <div class="rail-foot">
+      <p class="t-meta faint">Selected work, 2024—2025</p>
+      <a href="/work" class="pill">All projects</a>
+    </div>
+  </div>
+
+  {/* ── Studio statement ──────────────────────────────────────────── */}
+  <section class="section shell">
+    <div class="statement measure" data-reveal>
+      <p>
+        I'm Rosie — I design wedding stationery from a studio in Manchester, one
+        wedding at a time. Every suite starts blank. Nothing here comes off a
+        template, and no design gets used twice.
+      </p>
+      <p>
+        Most couples come to me because something about their day doesn't fit the
+        shelf: a venue worth drawing, a wedding two flights away, a party that
+        needs an invitation with a bit of <span class="accent">nerve</span> to it.
+        That's the work I like most.
+      </p>
+      <p>
+        I draw everything myself, manage the printing, and hand you something that
+        arrives in the post feeling like the start of the day rather than an
+        administrative step towards it.
+      </p>
+      <p class="statement__cta">
+        To see how a project runs, <a href="/process" class="pill">start here</a>
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule" />
+
+  {/* ── Services ──────────────────────────────────────────────────── */}
+  <section class="section shell">
+    <header class="svc__head" data-reveal>
+      <h2 class="t-title">What the studio makes</h2>
+      <a href="/services" class="pill">Services & pricing</a>
+    </header>
+
+    <ul class="svc">
+      {
+        services.map((s, i) => (
+          <li class="svc__row" data-reveal style={`--reveal-delay:${i * 70}ms`}>
+            <span class="t-micro svc__index">{s.index}</span>
+            <h3 class="t-section svc__name">{s.name}</h3>
+            <p class="svc__copy muted">{s.summary}</p>
+            <span class="t-meta faint svc__from">{s.from}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <hr class="rule" />
+
+  {/* ── Enquiry ───────────────────────────────────────────────────── */}
+  <section class="section shell">
+    <div class="cta" data-reveal>
+      <h2 class="cta__head">
+        Taking <span class="accent">2026</span> and 2027 weddings
+      </h2>
+      <p class="lead muted measure">
+        Tell me the date, the place, and roughly what you're imagining. I reply to
+        every enquiry personally, usually within two working days.
+      </p>
+      <div class="cta__row">
+        <a href="/contact" class="pill pill--solid">Start an enquiry</a>
+        <a href={site.instagram} target="_blank" rel="noopener noreferrer" class="pill">
+          {site.instagramHandle}
+        </a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* — Masthead ————————————————————————————————————————————— */
+  .mast {
+    position: relative;
+    padding-top: clamp(2.5rem, 6vw, 4.5rem);
+    padding-bottom: clamp(1rem, 2vw, 2rem);
+  }
+
+  .mast__intro {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.75rem;
+    padding-bottom: clamp(2.25rem, 4.5vw, 3.5rem);
+  }
+
+  .mast__title h1 {
+    max-width: 20ch;
+    font-size: var(--text-title);
+    font-weight: 500;
+    letter-spacing: -0.026em;
+    line-height: 1.15;
+  }
+
+  .mast__sub {
+    margin-top: 0.375rem;
+    font-size: var(--text-title);
+    font-weight: 400;
+    letter-spacing: -0.026em;
+    line-height: 1.15;
+    color: var(--color-ink-faint);
+  }
+
+  .mast__blurb {
+    max-width: 27rem;
+    font-size: var(--text-meta);
+    line-height: 1.65;
+    color: var(--color-ink-soft);
+  }
+
+  /* — Rail footer ——————————————————————————————————————————— */
+  .rail-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: clamp(1rem, 3vw, 2rem);
+  }
+
+  /* — Statement ————————————————————————————————————————————— */
+  .statement {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    font-size: var(--text-body);
+    line-height: 1.62;
+  }
+
+  .statement__cta { margin-top: 0.5rem; }
+
+  /* — Services ————————————————————————————————————————————— */
+  .svc__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .svc {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--color-rule-soft);
+  }
+
+  .svc__row {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 14rem) minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 0.5rem 1.5rem;
+    padding-block: 1.625rem;
+    border-bottom: 1px solid var(--color-rule-soft);
+  }
+
+  .svc__index { padding-top: 0.35rem; }
+  .svc__copy { font-size: var(--text-meta); line-height: 1.55; }
+  .svc__from { white-space: nowrap; }
+
+  @media (max-width: 52rem) {
+    .svc__row {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+    .svc__copy { grid-column: 2; }
+    .svc__from { grid-column: 2; }
+  }
+
+  /* — CTA ——————————————————————————————————————————————————— */
+  .cta {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .cta__head {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(2.25rem, 1.1rem + 5vw, 5rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--color-navy);
+  }
+
+  .cta__head .accent { color: var(--color-coral); }
+
+  .lead { font-size: var(--text-body); line-height: 1.6; }
+
+  .cta__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin-top: 0.75rem;
+  }
+</style>

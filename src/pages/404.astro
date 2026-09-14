@@ -1,0 +1,53 @@
+---
+import Base from '~/layouts/Base.astro';
+---
+
+<Base
+  title="Page not found"
+  description="That page doesn't exist — but the work, services and enquiry pages do."
+>
+  <section class="nf shell">
+    <p class="t-micro">Error 404</p>
+    <h1 class="nf__title">This page was never <span class="accent">printed</span></h1>
+    <p class="nf__body muted measure">
+      The link is wrong, or the page has moved. Nothing lost — everything the
+      studio makes is a click away.
+    </p>
+    <div class="nf__row">
+      <a href="/" class="pill pill--solid">Back to the studio</a>
+      <a href="/work" class="pill">See the work</a>
+      <a href="/contact" class="pill">Enquire</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding-block: clamp(5rem, 14vw, 11rem);
+  }
+
+  .nf__title {
+    max-width: 14ch;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(2.5rem, 1.2rem + 5.6vw, 5.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--color-navy);
+  }
+
+  .nf__title .accent { color: var(--color-coral); }
+
+  .nf__body { font-size: var(--text-body); line-height: 1.62; }
+
+  .nf__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin-top: 0.75rem;
+  }
+</style>

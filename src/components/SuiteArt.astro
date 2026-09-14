@@ -1,0 +1,360 @@
+---
+import type { Variant } from '~/data/work';
+
+interface Props {
+  variant: Variant;
+  /** Decorative by default; the card's own heading names the project. */
+  class?: string;
+}
+
+const { variant, class: className = '' } = Astro.props;
+
+/**
+ * Placeholder artwork.
+ * Each suite is drawn rather than photographed so the rail reads as designed
+ * work while the studio's own photography is still being shot. Swap these for
+ * real images by replacing <SuiteArt /> with an <Image /> in WorkCard.astro.
+ */
+
+/** A closed sinusoidal ellipse — the wavy frame used across the retro suite. */
+function wavyEllipse(cx: number, cy: number, rx: number, ry: number, lobes = 14, amp = 0.05) {
+  const pts: string[] = [];
+  const steps = 240;
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * Math.PI * 2;
+    const k = 1 + amp * Math.sin(lobes * t);
+    const x = cx + Math.cos(t) * rx * k;
+    const y = cy + Math.sin(t) * ry * k;
+    pts.push(`${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`);
+  }
+  return `${pts.join(' ')} Z`;
+}
+
+/** Evenly spaced "text" rules, standing in for set copy at card scale. */
+function textLines(x: number, y: number, widths: number[], gap = 11) {
+  return widths.map((w, i) => ({ x, y: y + i * gap, w }));
+}
+
+const wave = wavyEllipse(150, 178, 96, 116);
+const waveInner = wavyEllipse(150, 178, 82, 100, 14, 0.035);
+---
+
+<svg
+  class={`art ${className}`}
+  viewBox="0 0 300 400"
+  role="presentation"
+  aria-hidden="true"
+  preserveAspectRatio="xMidYMid meet"
+>
+  {/* ── Meg & James — wavy frame, coral line art ─────────────────────── */}
+  {
+    variant === 'retro' && (
+      <g>
+        <path d={wave} fill="#fdf4f0" stroke="#e9634a" stroke-width="2.5" />
+        <path d={waveInner} fill="none" stroke="#e9634a" stroke-width="1" opacity="0.5" />
+
+        <g fill="#e9634a">
+          <path d="M150 86c-4-7-14-6-14 2 0 6 9 12 14 16 5-4 14-10 14-16 0-8-10-9-14-2Z" />
+        </g>
+
+        <text
+          x="150" y="168" text-anchor="middle"
+          font-family="Instrument Serif, Georgia, serif" font-size="40" fill="#e9634a"
+        >
+          MEG
+        </text>
+        <text
+          x="150" y="212" text-anchor="middle"
+          font-family="Instrument Serif, Georgia, serif" font-size="40" fill="#e9634a"
+        >
+          + JAMES
+        </text>
+        <text
+          x="150" y="244" text-anchor="middle"
+          font-family="DM Mono, monospace" font-size="12" letter-spacing="2" fill="#e9634a"
+        >
+          30.10.25
+        </text>
+
+        {/* icon row: disco ball · glass · cake */}
+        <g stroke="#e9634a" stroke-width="1.6" fill="none" opacity="0.9">
+          <circle cx="92" cy="330" r="12" />
+          <path d="M80 330h24M92 318v24M84 322l16 16M100 322l-16 16" stroke-width="0.9" />
+          <path d="M138 320h24l-10 12v14M146 346h12" />
+          <path d="M196 346h28v-12h-28zM200 334v-8h20v8M210 318v8" />
+        </g>
+
+        <g stroke="#e9634a" stroke-width="1.4" opacity="0.75">
+          <path d="M56 128l6 6M62 128l-6 6M238 250l6 6M244 250l-6 6" />
+        </g>
+      </g>
+    )
+  }
+
+  {/* ── Destination passport — foiled cover ───────────────────────────── */}
+  {
+    variant === 'passport' && (
+      <g>
+        <rect x="46" y="44" width="208" height="312" rx="10" fill="#1a1a5e" />
+        <rect x="54" y="52" width="192" height="296" rx="6" fill="none" stroke="#c9a96a" stroke-width="1" opacity="0.55" />
+
+        <text
+          x="150" y="96" text-anchor="middle"
+          font-family="DM Mono, monospace" font-size="10" letter-spacing="3.5" fill="#c9a96a"
+        >
+          THE WEDDING OF
+        </text>
+
+        {/* crest */}
+        <g stroke="#c9a96a" fill="none" stroke-width="1.4">
+          <path d="M150 140c-22 0-34 8-34 8v34c0 26 18 40 34 47 16-7 34-21 34-47v-34s-12-8-34-8Z" />
+          <path d="M150 158v50M132 174h36" stroke-width="1" opacity="0.8" />
+          <circle cx="150" cy="128" r="7" />
+          <path d="M126 196c8 8 16 12 24 14M174 196c-8 8-16 12-24 14" stroke-width="0.9" opacity="0.7" />
+        </g>
+
+        <text
+          x="150" y="262" text-anchor="middle"
+          font-family="Instrument Serif, Georgia, serif" font-size="30" fill="#c9a96a"
+        >
+          PASSPORT
+        </text>
+
+        <g stroke="#c9a96a" opacity="0.55" stroke-width="1">
+          <path d="M100 286h100M112 300h76" />
+        </g>
+
+        <text
+          x="150" y="332" text-anchor="middle"
+          font-family="DM Mono, monospace" font-size="9" letter-spacing="3" fill="#c9a96a"
+          opacity="0.8"
+        >
+          PUGLIA · ITALIA
+        </text>
+      </g>
+    )
+  }
+
+  {/* ── Lucy & Ross — venue line drawing ─────────────────────────────── */}
+  {
+    variant === 'venue' && (
+      <g>
+        <rect x="18" y="14" width="264" height="372" rx="3" fill="#fffdfb" />
+        <g stroke="#15151a" fill="none" stroke-width="1.1" stroke-linejoin="round">
+          {/* main hall */}
+          <path d="M72 260V166l78-40 78 40v94" />
+          <path d="M60 260h180" stroke-width="1.4" />
+          {/* roofline + tower */}
+          <path d="M130 146V112h40v22M140 112V98h20v14M150 98V84" />
+          <path d="M150 84l-5 6h10l-5-6Z" fill="#15151a" />
+          {/* windows */}
+          <g stroke-width="0.9">
+            <rect x="92" y="186" width="22" height="34" rx="11" />
+            <rect x="128" y="186" width="22" height="34" rx="11" />
+            <rect x="164" y="186" width="22" height="34" rx="11" />
+            <rect x="200" y="186" width="22" height="34" rx="11" />
+            <path d="M92 203h22M128 203h22M164 203h22M200 203h22" opacity="0.6" />
+          </g>
+          {/* door */}
+          <path d="M138 260v-28a12 12 0 0 1 24 0v28" stroke-width="1" />
+          {/* steps */}
+          <path d="M128 260h44M122 268h56" stroke-width="0.8" opacity="0.7" />
+          {/* trees */}
+          <g stroke-width="0.9" opacity="0.75">
+            <circle cx="44" cy="222" r="18" />
+            <path d="M44 240v20" />
+            <circle cx="256" cy="228" r="14" />
+            <path d="M256 242v18" />
+          </g>
+        </g>
+
+        <text
+          x="150" y="312" text-anchor="middle"
+          font-family="Instrument Serif, Georgia, serif" font-size="26" fill="#15151a"
+        >
+          Lucy & Ross
+        </text>
+        <text
+          x="150" y="336" text-anchor="middle"
+          font-family="DM Mono, monospace" font-size="9" letter-spacing="3" fill="#6b6b73"
+        >
+          07.09.24
+        </text>
+      </g>
+    )
+  }
+
+  {/* ── Laura & Gareth — botanical under vellum ──────────────────────── */}
+  {
+    variant === 'botanical' && (
+      <g>
+        <rect x="40" y="38" width="220" height="324" rx="3" fill="#fcfcfa" />
+
+        {/* sprig */}
+        <g stroke="#7f8a76" fill="none" stroke-width="1.1">
+          <path d="M78 314C78 250 84 196 104 150" />
+          {[
+            [104, 150, -1], [98, 176, 1], [94, 202, -1],
+            [89, 230, 1], [85, 258, -1], [82, 286, 1],
+          ].map(([x, y, dir]) => (
+            <ellipse
+              cx={Number(x) + Number(dir) * 15}
+              cy={Number(y)}
+              rx="15" ry="6.5"
+              transform={`rotate(${Number(dir) * -22} ${Number(x) + Number(dir) * 15} ${Number(y)})`}
+            />
+          ))}
+        </g>
+
+        <text
+          x="196" y="212" text-anchor="end"
+          font-family="Instrument Serif, Georgia, serif" font-size="27" fill="#3f473a"
+        >
+          Laura
+        </text>
+        <text
+          x="196" y="244" text-anchor="end"
+          font-family="Instrument Serif, Georgia, serif" font-size="27" fill="#3f473a"
+        >
+          & Gareth
+        </text>
+
+        <g stroke="#7f8a76" opacity="0.5" stroke-width="0.9">
+          <path d="M140 268h56M156 282h40" />
+        </g>
+
+        {/* vellum wrap */}
+        <rect x="40" y="290" width="220" height="72" fill="#ffffff" opacity="0.55" />
+        <rect x="40" y="290" width="220" height="72" fill="none" stroke="#ffffff" opacity="0.8" />
+        <text
+          x="150" y="332" text-anchor="middle"
+          font-family="DM Mono, monospace" font-size="9" letter-spacing="3.5" fill="#5a6353"
+        >
+          PLEASE RSVP
+        </text>
+      </g>
+    )
+  }
+
+  {/* ── Jemima & Jack — portrait pair ────────────────────────────────── */}
+  {
+    variant === 'portrait' && (
+      <g>
+        {[
+          { x: 26, skin: '#e8c3a8', hair: '#3b3027', cloth: '#8d9ab4', name: 'Jemima', long: true },
+          { x: 160, skin: '#dcae90', hair: '#20201d', cloth: '#4d5568', name: 'Jack', long: false },
+        ].map((p) => (
+          <g>
+            <rect x={p.x} y="58" width="114" height="252" rx="4" fill="#fcfbf8" />
+            <rect x={p.x} y="58" width="114" height="252" rx="4" fill="none" stroke="#15151a" opacity="0.08" />
+
+            {/* shoulders */}
+            <path
+              d={`M${p.x + 20} 246c0-30 16-46 37-46s37 16 37 46z`}
+              fill={p.cloth}
+            />
+            {/* neck + head */}
+            <path d={`M${p.x + 47} 196h20v20h-20z`} fill={p.skin} />
+            <ellipse cx={p.x + 57} cy="168" rx="26" ry="30" fill={p.skin} />
+            {/* hair */}
+            {p.long ? (
+              <path
+                d={`M${p.x + 31} 170c0-26 12-40 26-40s26 14 26 40c0 22-2 38-6 52h-12c4-18 4-38 0-52-8 6-24 6-34 0z`}
+                fill={p.hair}
+              />
+            ) : (
+              <path
+                d={`M${p.x + 32} 162c2-22 12-32 25-32s23 10 25 32c-6-10-14-14-25-14s-19 4-25 14z`}
+                fill={p.hair}
+              />
+            )}
+            {/* features */}
+            <g fill="#15151a" opacity="0.75">
+              <circle cx={p.x + 48} cy="166" r="2" />
+              <circle cx={p.x + 66} cy="166" r="2" />
+            </g>
+            <path
+              d={`M${p.x + 50} 180c4 4 10 4 14 0`}
+              stroke="#15151a" stroke-width="1.4" fill="none" opacity="0.6" stroke-linecap="round"
+            />
+
+            <text
+              x={p.x + 57} y="286" text-anchor="middle"
+              font-family="Instrument Serif, Georgia, serif" font-size="21" fill="#15151a"
+            >
+              {p.name}
+            </text>
+
+            {/* easel */}
+            <g stroke="#b9a98d" stroke-width="3" stroke-linecap="round">
+              <path d={`M${p.x + 24} 310l-8 44M${p.x + 90} 310l8 44M${p.x + 22} 340h70`} />
+            </g>
+          </g>
+        ))}
+      </g>
+    )
+  }
+
+  {/* ── Olive grove — illustrated map ────────────────────────────────── */}
+  {
+    variant === 'map' && (
+      <g>
+        <rect x="24" y="30" width="252" height="340" rx="2" fill="#f7f3e8" />
+
+        {/* contours */}
+        <g stroke="#c9bda3" fill="none" stroke-width="0.9" opacity="0.9">
+          <path d="M40 120c40-26 86-20 120 6s70 26 116 2" />
+          <path d="M40 148c44-24 88-16 120 10s72 22 116-2" />
+          <path d="M40 176c48-20 90-10 122 16s70 16 114-8" />
+        </g>
+
+        {/* river */}
+        <path
+          d="M52 366c18-58 6-96 34-132s72-42 82-84 2-70 2-70"
+          stroke="#93a8b8" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.85"
+        />
+        {/* roads */}
+        <g stroke="#15151a" fill="none" stroke-width="1.1" opacity="0.45">
+          <path d="M24 268h252" stroke-dasharray="6 5" />
+          <path d="M140 30v340" stroke-dasharray="6 5" />
+          <path d="M60 340c50-30 70-60 140-72" />
+        </g>
+
+        {/* olive dots */}
+        <g fill="#8b9a72" opacity="0.75">
+          {[
+            [64, 216], [82, 232], [60, 246], [88, 258], [66, 274],
+            [214, 132], [232, 148], [210, 160], [238, 176],
+          ].map(([x, y]) => <circle cx={x} cy={y} r="5" />)}
+        </g>
+
+        {/* pins */}
+        <g fill="#e9634a">
+          {[[140, 200], [86, 120], [224, 300], [196, 246]].map(([x, y]) => (
+            <path d={`M${x} ${y}c-7-9-12-13-12-21a12 12 0 0 1 24 0c0 8-5 12-12 21Z`} />
+          ))}
+        </g>
+        <g fill="#f7f3e8">
+          {[[140, 179], [86, 99], [224, 279], [196, 225]].map(([x, y]) => (
+            <circle cx={x} cy={y} r="4.5" />
+          ))}
+        </g>
+
+        <text
+          x="150" y="346" text-anchor="middle"
+          font-family="DM Mono, monospace" font-size="9" letter-spacing="3" fill="#6b6b73"
+        >
+          LA VALLÉE · PROVENCE
+        </text>
+      </g>
+    )
+  }
+</svg>
+
+<style>
+  .art {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+</style>

@@ -1,0 +1,55 @@
+---
+import Base from '~/layouts/Base.astro';
+import PageHead from '~/components/PageHead.astro';
+import WorkCard from '~/components/WorkCard.astro';
+import { projects } from '~/data/work';
+---
+
+<Base
+  title="Work"
+  description="Selected wedding stationery by fold.designs — bespoke invitation suites, destination passports, venue illustration and on-the-day pieces."
+>
+  <PageHead
+    eyebrow="Selected work"
+    title='Weddings the studio has <span class="accent">drawn</span>'
+    intro="Six projects from the last two years. Each one started with an empty page, a venue, and a couple who wanted their stationery to say something specific."
+  />
+
+  <div class="shell">
+    <hr class="rule" />
+    <ul class="grid">
+      {
+        projects.map((p, i) => (
+          <li>
+            <WorkCard project={p} delay={(i % 3) * 80} />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  <div class="shell">
+    <hr class="rule" />
+    <p class="tail muted measure">
+      Looking for something that isn't here? Most of what the studio makes never
+      reaches the website — <a href="/contact" class="link-wipe">ask</a>.
+    </p>
+  </div>
+</Base>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+    gap: clamp(1.75rem, 3.5vw, 3rem) clamp(1rem, 2vw, 1.5rem);
+    margin: 0;
+    padding: clamp(2.5rem, 5vw, 4rem) 0;
+    list-style: none;
+  }
+
+  .tail {
+    padding-block: clamp(2rem, 4vw, 3rem);
+    font-size: var(--text-body);
+    line-height: 1.6;
+  }
+</style>

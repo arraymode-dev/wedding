@@ -1,0 +1,355 @@
+---
+import Base from '~/layouts/Base.astro';
+import PageHead from '~/components/PageHead.astro';
+import { site } from '~/data/site';
+import { services } from '~/data/services';
+---
+
+<Base
+  title="Enquire"
+  description="Start a wedding stationery enquiry with fold.designs. Tell Rosie your date, venue and what you're imagining — every enquiry gets a personal reply within two working days."
+>
+  <PageHead
+    eyebrow="Enquire"
+    title='Tell me about your <span class="accent">wedding</span>'
+    intro="The more you can tell me now, the more useful my first reply will be. Nothing here is binding — it's a conversation, not a booking form."
+  />
+
+  <div class="shell">
+    <hr class="rule" />
+
+    <div class="enq">
+      {/*
+        The form posts nowhere yet. Point `action` at a form endpoint
+        (Formspree, Basin, Netlify Forms) or wire it to your own handler.
+        Keep the honeypot field — it stops most bot submissions on its own.
+      */}
+      <form
+        class="form"
+        method="POST"
+        action="#"
+        data-form
+        data-reveal
+      >
+        <div class="form__grid">
+          <label class="field">
+            <span class="field__label t-micro">Your names *</span>
+            <input type="text" name="names" required autocomplete="name" placeholder="Meg & James" />
+          </label>
+
+          <label class="field">
+            <span class="field__label t-micro">Email *</span>
+            <input type="email" name="email" required autocomplete="email" placeholder="you@example.com" />
+          </label>
+
+          <label class="field">
+            <span class="field__label t-micro">Wedding date</span>
+            <input type="date" name="date" />
+          </label>
+
+          <label class="field">
+            <span class="field__label t-micro">Venue or location</span>
+            <input type="text" name="venue" placeholder="Puglia, or still deciding" />
+          </label>
+
+          <label class="field">
+            <span class="field__label t-micro">Roughly how many invitations</span>
+            <input type="text" name="quantity" inputmode="numeric" placeholder="80" />
+          </label>
+
+          <label class="field">
+            <span class="field__label t-micro">Where did you find me</span>
+            <input type="text" name="referrer" placeholder="Instagram, a friend, a venue" />
+          </label>
+        </div>
+
+        <fieldset class="field field--full choices">
+          <legend class="field__label t-micro">What you think you need</legend>
+          <div class="choices__row">
+            {
+              services.map((s) => (
+                <label class="choice">
+                  <input type="checkbox" name="services" value={s.name} />
+                  <span>{s.name}</span>
+                </label>
+              ))
+            }
+            <label class="choice">
+              <input type="checkbox" name="services" value="Not sure yet" />
+              <span>Not sure yet</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <label class="field field--full">
+          <span class="field__label t-micro">Tell me about it *</span>
+          <textarea
+            name="message"
+            rows="6"
+            required
+            placeholder="The feeling you're after, anything you've already collected, whether there's a venue or a dog worth drawing — anything at all."
+          ></textarea>
+        </label>
+
+        <label class="field field--full budget">
+          <span class="field__label t-micro">Budget you have in mind</span>
+          <select name="budget">
+            <option value="">Rather not say yet</option>
+            <option>Under £500</option>
+            <option>£500 — £1,000</option>
+            <option>£1,000 — £2,000</option>
+            <option>£2,000 — £3,500</option>
+            <option>£3,500+</option>
+          </select>
+        </label>
+
+        {/* Honeypot — hidden from people, irresistible to bots. */}
+        <div class="hp" aria-hidden="true">
+          <label>
+            Leave this field empty
+            <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" />
+          </label>
+        </div>
+
+        <div class="form__foot">
+          <button type="submit" class="pill pill--solid">Send enquiry</button>
+          <p class="t-meta faint">
+            I reply to every enquiry personally, usually within two working days.
+          </p>
+        </div>
+
+        <p class="form__note t-meta" data-form-note hidden>
+          This form isn't connected to an inbox yet — email
+          <a href={`mailto:${site.email}`} class="link-wipe">{site.email}</a> in the
+          meantime.
+        </p>
+      </form>
+
+      <aside class="enq__side" data-reveal style="--reveal-delay:100ms">
+        <div class="side__block">
+          <p class="t-micro">Or just email</p>
+          <a href={`mailto:${site.email}`} class="side__email link-wipe">{site.email}</a>
+        </div>
+
+        <div class="side__block">
+          <p class="t-micro">Elsewhere</p>
+          <a href={site.instagram} target="_blank" rel="noopener noreferrer" class="pill">
+            {site.instagramHandle}
+          </a>
+        </div>
+
+        <div class="side__block">
+          <p class="t-micro">Before you write</p>
+          <ul class="side__list">
+            <li>Nine to twelve months ahead is comfortable for a full suite.</li>
+            <li>A date that's sooner is still worth asking about.</li>
+            <li>Guide prices are on the <a href="/services" class="link-wipe">services page</a>.</li>
+            <li>Sample packs are available before you commit to anything.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</Base>
+
+<script>
+  // Until a form endpoint is wired up, intercept the submit and surface the
+  // fallback note rather than navigating to a dead action.
+  const form = document.querySelector<HTMLFormElement>('[data-form]');
+  const note = document.querySelector<HTMLElement>('[data-form-note]');
+
+  form?.addEventListener('submit', (event) => {
+    if (form.getAttribute('action') !== '#') return;
+    event.preventDefault();
+    if (note) {
+      note.hidden = false;
+      note.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+</script>
+
+<style>
+  .enq {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 17rem);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    padding-block: clamp(3rem, 6vw, 4.5rem);
+  }
+
+  @media (max-width: 58rem) {
+    .enq { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* — Form ————————————————————————————————————————————————— */
+  .form { max-width: 40rem; }
+
+  .form__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 1.5rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  .field--full { margin-top: 1.5rem; }
+
+  .field__label { display: block; padding: 0; }
+
+  .field input,
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 0.6875rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--color-rule);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-ink);
+    font-family: inherit;
+    font-size: var(--text-body);
+    line-height: 1.5;
+    transition: border-color 0.35s var(--ease-out-soft);
+  }
+
+  .field textarea { resize: vertical; }
+
+  .field input::placeholder,
+  .field textarea::placeholder { color: var(--color-ink-faint); }
+
+  .field input:focus,
+  .field textarea:focus,
+  .field select:focus {
+    outline: none;
+    border-bottom-color: var(--color-coral);
+  }
+
+  .field input:focus-visible,
+  .field textarea:focus-visible,
+  .field select:focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 4px;
+  }
+
+  .budget { max-width: 20rem; }
+
+  /* — Checkbox row ————————————————————————————————————————— */
+  .choices__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4375rem 0.875rem;
+    border: 1px solid var(--color-rule);
+    border-radius: 999px;
+    font-size: var(--text-meta);
+    cursor: pointer;
+    transition:
+      background-color 0.3s var(--ease-out-soft),
+      border-color 0.3s var(--ease-out-soft),
+      color 0.3s var(--ease-out-soft);
+  }
+
+  .choice input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .choice:hover { border-color: var(--color-ink-faint); }
+
+  .choice:has(input:checked) {
+    background: var(--color-navy);
+    border-color: var(--color-navy);
+    color: var(--color-paper);
+  }
+
+  .choice:has(input:focus-visible) {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 3px;
+  }
+
+  /* — Foot ————————————————————————————————————————————————— */
+  .form__foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    margin-top: 2.5rem;
+  }
+
+  .form__foot p { max-width: 20rem; line-height: 1.5; }
+
+  .form__note {
+    margin-top: 1.5rem;
+    padding: 0.875rem 1.125rem;
+    border: 1px solid var(--color-rule);
+    border-radius: 0.75rem;
+    background: color-mix(in oklab, var(--color-butter) 28%, transparent);
+    line-height: 1.55;
+  }
+
+  .hp {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* — Side ————————————————————————————————————————————————— */
+  .enq__side {
+    display: flex;
+    flex-direction: column;
+    gap: 2.25rem;
+  }
+
+  .side__block > .t-micro { margin-bottom: 0.75rem; }
+
+  .side__email {
+    font-size: var(--text-section);
+    letter-spacing: -0.02em;
+  }
+
+  .side__list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .side__list li {
+    position: relative;
+    padding-left: 1.125rem;
+    font-size: var(--text-meta);
+    line-height: 1.55;
+    color: var(--color-ink-soft);
+  }
+
+  .side__list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--color-coral);
+  }
+</style>

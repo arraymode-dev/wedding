@@ -1,0 +1,236 @@
+---
+import Base from '~/layouts/Base.astro';
+import PageHead from '~/components/PageHead.astro';
+import { services } from '~/data/services';
+
+const accentVar: Record<string, string> = {
+  coral: 'var(--color-coral)',
+  indigo: 'var(--color-navy)',
+  sage: '#7f8a76',
+  champagne: '#b1934f',
+};
+---
+
+<Base
+  title="Services"
+  description="Bespoke wedding stationery services from fold.designs — fully bespoke suites, destination passports, illustration commissions and on-the-day pieces, with guide pricing and lead times."
+>
+  <PageHead
+    eyebrow="Services & pricing"
+    title='Four ways to <span class="accent">work</span> together'
+    intro="Everything is made to order, so the figures below are starting points rather than a price list. The final number depends on quantity, printing method and how much illustration the suite carries — you'll get a fixed written quote before anything begins."
+  />
+
+  <div class="shell">
+    {
+      services.map((s, i) => (
+        <section class="svc" id={s.id} style={`--accent:${accentVar[s.accent]}`}>
+          <hr class="rule" />
+          <div class="svc__grid" data-reveal>
+            <div class="svc__lede">
+              <p class="t-micro svc__index">{s.index}</p>
+              <h2 class="svc__name">{s.name}</h2>
+              <p class="svc__summary muted">{s.summary}</p>
+
+              <dl class="svc__facts">
+                <div>
+                  <dt class="t-micro">Guide price</dt>
+                  <dd>{s.from}</dd>
+                </div>
+                <div>
+                  <dt class="t-micro">Lead time</dt>
+                  <dd>{s.lead}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="svc__detail">
+              <p class="t-micro">Typically includes</p>
+              <ul class="svc__list">
+                {s.includes.map((item) => <li>{item}</li>)}
+              </ul>
+
+              <p class="svc__best">
+                <span class="t-micro">Best for</span>
+                <span>{s.best}</span>
+              </p>
+            </div>
+          </div>
+        </section>
+      ))
+    }
+
+    <hr class="rule" />
+
+    {/* ── Notes ────────────────────────────────────────────────────── */}
+    <section class="notes">
+      <h2 class="t-title" data-reveal>Worth knowing</h2>
+      <dl class="notes__list">
+        {
+          [
+            {
+              q: 'When should we get in touch?',
+              a: 'Nine to twelve months before the wedding is comfortable for a full suite. Save the dates usually go out eight to ten months ahead, invitations three to four. If your date is sooner than that, ask anyway — there is often room.',
+            },
+            {
+              q: 'Do you take on save the dates only?',
+              a: 'Yes, though most couples who start there come back for the invitation. Pricing is proportional, and the design work carries forward so the second stage costs less than starting again.',
+            },
+            {
+              q: 'Is printing included?',
+              a: 'Print management is included in every service. You approve a proof, I handle the press, and the finished suite is delivered to you — assembled if you would rather not do it yourself.',
+            },
+            {
+              q: 'Can we see a sample first?',
+              a: 'A sample pack of stocks, finishes and previous suites is available before you commit. It is the fastest way to work out what you actually like, and the cost comes off your first invoice.',
+            },
+            {
+              q: 'Do you ship outside the UK?',
+              a: 'Regularly. Destination work goes wherever the wedding is, and guest lists are often split across several countries — that is planned into the schedule from the start.',
+            },
+          ].map((n, i) => (
+            <div class="note" data-reveal style={`--reveal-delay:${i * 60}ms`}>
+              <dt class="note__q">{n.q}</dt>
+              <dd class="note__a muted">{n.a}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </section>
+
+    <hr class="rule" />
+
+    <section class="cta" data-reveal>
+      <p class="measure muted">
+        Not sure which of these you need? Describe the wedding and I'll tell you
+        what I think it wants.
+      </p>
+      <a href="/contact" class="pill pill--solid">Start an enquiry</a>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .svc__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    padding-block: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  @media (max-width: 54rem) {
+    .svc__grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .svc__index { color: var(--accent); }
+
+  .svc__name {
+    margin-top: 1rem;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(2rem, 1.3rem + 2.6vw, 3.25rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    color: var(--color-navy);
+  }
+
+  .svc__summary {
+    max-width: 30rem;
+    margin-top: 1.25rem;
+    font-size: var(--text-body);
+    line-height: 1.62;
+  }
+
+  .svc__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2.5rem;
+    margin: 2rem 0 0;
+  }
+
+  .svc__facts dd {
+    margin: 0.5rem 0 0;
+    font-size: var(--text-section);
+    letter-spacing: -0.02em;
+  }
+
+  .svc__list {
+    display: grid;
+    gap: 0.625rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .svc__list li {
+    position: relative;
+    padding-left: 1.125rem;
+    font-size: var(--text-meta);
+    line-height: 1.55;
+    color: var(--color-ink-soft);
+  }
+
+  .svc__list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  .svc__best {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-rule-soft);
+    font-size: var(--text-meta);
+    line-height: 1.55;
+    color: var(--color-ink-soft);
+  }
+
+  /* — Notes ————————————————————————————————————————————————— */
+  .notes { padding-block: clamp(3rem, 6vw, 4.5rem); }
+
+  .notes__list {
+    margin: 2.5rem 0 0;
+    border-top: 1px solid var(--color-rule-soft);
+  }
+
+  .note {
+    display: grid;
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    gap: 0.75rem 3rem;
+    padding-block: 1.5rem;
+    border-bottom: 1px solid var(--color-rule-soft);
+  }
+
+  @media (max-width: 48rem) {
+    .note { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .note__q { font-size: var(--text-body); font-weight: 500; }
+
+  .note__a {
+    margin: 0;
+    max-width: 38rem;
+    font-size: var(--text-meta);
+    line-height: 1.6;
+  }
+
+  /* — CTA —————————————————————————————————————————————————— */
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .cta p { font-size: var(--text-body); line-height: 1.6; }
+</style>

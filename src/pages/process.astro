@@ -1,0 +1,198 @@
+---
+import Base from '~/layouts/Base.astro';
+import PageHead from '~/components/PageHead.astro';
+
+const steps = [
+  {
+    n: '01',
+    name: 'Enquiry',
+    when: 'Day one',
+    body: "You send the date, the venue and whatever you've gathered so far — a Pinterest board, a colour, a single sentence about the feeling. I reply within two working days with availability and a guide price.",
+  },
+  {
+    n: '02',
+    name: 'Call & direction',
+    when: 'Week one',
+    body: "A half-hour call to work out what the wedding actually is, not just what it looks like. Afterwards you get a short written direction: the approach, the pieces, the schedule and a fixed quote.",
+  },
+  {
+    n: '03',
+    name: 'Design',
+    when: 'Weeks 2—5',
+    body: 'Two original concepts, drawn from scratch. You pick one — or the half of each that works — and I take it to a finished invitation. Illustration begins here if the suite carries any.',
+  },
+  {
+    n: '04',
+    name: 'Refinement',
+    when: 'Weeks 5—7',
+    body: 'Two rounds of changes are built into every project, and in practice most suites need less. This is where the wording gets tightened and the last details land.',
+  },
+  {
+    n: '05',
+    name: 'Proof & print',
+    when: 'Weeks 7—10',
+    body: 'A printed proof on your chosen stock, in your hands, before the run. Nothing goes to press until you have held it. Then printing, finishing and — if you want — assembly.',
+  },
+  {
+    n: '06',
+    name: 'Delivery',
+    when: 'Weeks 10—12',
+    body: "The suite arrives with you, or goes straight to guests with envelope addressing done. On-the-day pieces follow closer to the wedding, timed to your venue access.",
+  },
+];
+---
+
+<Base
+  title="Process"
+  description="How a wedding stationery project runs at fold.designs — from first enquiry through design, proofing and print to delivery, with a typical twelve-week schedule."
+>
+  <PageHead
+    eyebrow="How it works"
+    title='Twelve weeks, <span class="accent">roughly</span>'
+    intro="Every project runs the same six stages. The timings stretch for destination suites and compress when a date is close, but the order never changes — and you always know which stage you're in."
+  />
+
+  <div class="shell">
+    <hr class="rule" />
+
+    <ol class="steps">
+      {
+        steps.map((s, i) => (
+          <li class="step" data-reveal style={`--reveal-delay:${i * 60}ms`}>
+            <span class="t-micro step__n">{s.n}</span>
+            <div class="step__main">
+              <h2 class="step__name">{s.name}</h2>
+              <p class="step__body muted">{s.body}</p>
+            </div>
+            <span class="t-meta faint step__when">{s.when}</span>
+          </li>
+        ))
+      }
+    </ol>
+
+    <hr class="rule" />
+
+    <section class="aside">
+      <div class="aside__col" data-reveal>
+        <h2 class="t-title">What I need from you</h2>
+        <ul class="aside__list">
+          <li>The date, the venue, and how many invitations (roughly — it always changes)</li>
+          <li>Names and addresses, in a spreadsheet, whenever you have them</li>
+          <li>Final wording, signed off by both of you</li>
+          <li>Honest feedback at each round — "I don't like it" is genuinely useful</li>
+        </ul>
+      </div>
+
+      <div class="aside__col" data-reveal style="--reveal-delay:80ms">
+        <h2 class="t-title">What you get from me</h2>
+        <ul class="aside__list">
+          <li>A fixed quote before any work starts, with no hourly surprises</li>
+          <li>Original artwork — nothing templated, nothing reused from another wedding</li>
+          <li>A printed proof in your hands before the press run</li>
+          <li>One person, start to finish. You will not be handed to anyone else</li>
+        </ul>
+      </div>
+    </section>
+
+    <hr class="rule" />
+
+    <section class="cta" data-reveal>
+      <p class="measure muted">
+        That's the whole of it. If the schedule works, the next step is a short
+        note about your wedding.
+      </p>
+      <a href="/contact" class="pill pill--solid">Start an enquiry</a>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+    gap: 0.5rem 2rem;
+    align-items: start;
+    padding-block: clamp(1.75rem, 3.5vw, 2.75rem);
+    border-bottom: 1px solid var(--color-rule-soft);
+  }
+
+  .step:last-child { border-bottom: 0; }
+
+  .step__n { padding-top: 0.5rem; color: var(--color-coral); }
+
+  .step__name {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--color-navy);
+  }
+
+  .step__body {
+    max-width: 38rem;
+    margin-top: 0.875rem;
+    font-size: var(--text-body);
+    line-height: 1.62;
+  }
+
+  .step__when { white-space: nowrap; padding-top: 0.5rem; }
+
+  @media (max-width: 46rem) {
+    .step { grid-template-columns: 3rem minmax(0, 1fr); }
+    .step__when { grid-column: 2; padding-top: 1rem; }
+  }
+
+  /* — Aside columns ————————————————————————————————————————— */
+  .aside {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: clamp(2.5rem, 5vw, 4.5rem);
+    padding-block: clamp(3rem, 6vw, 4.5rem);
+  }
+
+  .aside__list {
+    display: grid;
+    gap: 0.875rem;
+    margin: 1.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    max-width: 30rem;
+  }
+
+  .aside__list li {
+    position: relative;
+    padding-left: 1.25rem;
+    font-size: var(--text-meta);
+    line-height: 1.6;
+    color: var(--color-ink-soft);
+  }
+
+  .aside__list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--color-navy);
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .cta p { font-size: var(--text-body); line-height: 1.6; }
+</style>

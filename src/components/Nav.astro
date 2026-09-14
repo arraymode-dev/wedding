@@ -1,0 +1,88 @@
+---
+import { site } from '~/data/site';
+import Logo from '~/components/Logo.astro';
+---
+
+<header class="hdr" data-hdr>
+  <div class="hdr__inner shell">
+    <a href="/" class="hdr__mark" aria-label={`${site.name} — home`}>
+      <Logo height="0.8125rem" class="hdr__logo" />
+      <span>{site.name}</span>
+    </a>
+
+    <a href="/contact" class="hdr__cta">
+      <svg viewBox="0 0 22 12" width="22" height="12" aria-hidden="true" class="hdr__rings">
+        <circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" stroke-width="1.2"></circle>
+        <circle cx="16" cy="6" r="5" fill="none" stroke="currentColor" stroke-width="1.2"></circle>
+      </svg>
+      <span>Enquire</span>
+    </a>
+  </div>
+</header>
+
+<script>
+  // The bar is transparent over the top of the page and only frosts once
+  // content has actually scrolled beneath it.
+  const hdr = document.querySelector<HTMLElement>('[data-hdr]');
+
+  if (hdr) {
+    const sync = () => hdr.classList.toggle('is-stuck', window.scrollY > 8);
+    sync();
+    window.addEventListener('scroll', sync, { passive: true });
+  }
+</script>
+
+<style>
+  .hdr {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: transparent;
+    transition:
+      background-color 0.4s var(--ease-out-soft),
+      backdrop-filter 0.4s var(--ease-out-soft);
+  }
+
+  /* Frosted only while content passes underneath. */
+  .hdr.is-stuck {
+    background: color-mix(in oklab, var(--color-paper) 62%, transparent);
+    backdrop-filter: saturate(160%) blur(12px);
+    -webkit-backdrop-filter: saturate(160%) blur(12px);
+  }
+
+  .hdr__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: var(--header-h);
+  }
+
+  .hdr__mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--text-meta);
+    font-weight: 500;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+
+  .hdr__mark :global(.hdr__logo) {
+    color: var(--color-navy);
+    transition: color 0.4s var(--ease-out-soft);
+  }
+  .hdr__mark:hover :global(.hdr__logo) { color: var(--color-coral); }
+
+  .hdr__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--text-meta);
+    text-decoration: none;
+    transition: color 0.3s var(--ease-out-soft);
+  }
+  .hdr__cta:hover { color: var(--color-coral); }
+
+  .hdr__rings { flex: none; }
+</style>

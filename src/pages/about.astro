@@ -1,0 +1,171 @@
+---
+import Base from '~/layouts/Base.astro';
+import PageHead from '~/components/PageHead.astro';
+import { site } from '~/data/site';
+
+const facts = [
+  { k: 'Studio', v: 'Manchester, UK' },
+  { k: 'Working since', v: '2019' },
+  { k: 'Weddings a year', v: 'Twelve, maximum' },
+  { k: 'Ships to', v: 'UK & internationally' },
+];
+---
+
+<Base
+  title="About"
+  description="Rosie Pedley designs bespoke wedding stationery as fold.designs, from a studio in Manchester — hand-drawn illustration, destination suites and on-the-day pieces."
+>
+  <PageHead
+    eyebrow="About the studio"
+    title='Hello — I&#39;m <span class="accent">Rosie</span>'
+    intro="I design and illustrate wedding stationery from a small studio in Manchester. Fold is just me, which is deliberate: you talk to the person drawing your invitations, from the first email to the box arriving at your door."
+  />
+
+  <div class="shell">
+    <hr class="rule" />
+
+    <div class="about">
+      <div class="about__prose" data-reveal>
+        <p>
+          I trained in graphic design and spent several years in studios doing
+          brand work before I drew a wedding invitation for a friend and realised
+          I'd rather do that. Stationery is one of the few places left where
+          design is still something you hold, post, open, and keep in a drawer
+          twenty years later.
+        </p>
+        <p>
+          The work sits somewhere between illustration and typography. Almost
+          every suite carries something drawn — a venue, a portrait, a stretch of
+          coastline, a dog — because that is the part guests actually look at.
+          The rest of the design exists to let that drawing breathe and to make
+          the practical information easy to find.
+        </p>
+        <p>
+          I take on around twelve weddings a year. That number is the whole
+          business model: it's small enough that nothing gets rushed, and small
+          enough that I can say yes to the strange requests — the four-language
+          suite, the fold-out map, the invitation shaped like a
+          <span class="accent">passport</span>.
+        </p>
+        <p>
+          If you've read this far, you probably care more than average about how
+          your wedding looks on paper. That's usually a good sign we'll get on.
+        </p>
+      </div>
+
+      <aside class="about__side" data-reveal style="--reveal-delay:100ms">
+        <div class="portrait" aria-hidden="true">
+          <svg viewBox="0 0 220 280" role="presentation">
+            <rect width="220" height="280" fill="var(--color-butter-pale)" />
+            <g>
+              <path d="M62 280c0-46 22-70 48-70s48 24 48 70z" fill="var(--color-navy)" />
+              <path d="M96 196h28v26H96z" fill="#e8c3a8" />
+              <ellipse cx="110" cy="160" rx="36" ry="42" fill="#e8c3a8" />
+              <path
+                d="M72 164c0-36 17-56 38-56s38 20 38 56c0 30-3 52-8 72h-17c6-25 6-52 0-72-11 9-34 9-51 0z"
+                fill="#4a3b30"
+              />
+              <g fill="var(--color-navy)" opacity="0.8">
+                <circle cx="98" cy="158" r="2.6" />
+                <circle cx="123" cy="158" r="2.6" />
+              </g>
+              <path
+                d="M101 176c5 5 13 5 18 0"
+                stroke="var(--color-navy)" stroke-width="2" fill="none"
+                stroke-linecap="round" opacity="0.6"
+              />
+            </g>
+          </svg>
+        </div>
+        <p class="portrait__cap t-meta faint">
+          Placeholder portrait — swap for a photograph of Rosie at work.
+        </p>
+
+        <dl class="facts">
+          {
+            facts.map((f) => (
+              <div class="facts__row">
+                <dt class="t-micro">{f.k}</dt>
+                <dd>{f.v}</dd>
+              </div>
+            ))
+          }
+        </dl>
+
+        <a href={site.instagram} target="_blank" rel="noopener noreferrer" class="pill">
+          {site.instagramHandle}
+        </a>
+      </aside>
+    </div>
+
+    <hr class="rule" />
+
+    <section class="cta" data-reveal>
+      <p class="measure muted">
+        The studio takes a limited number of weddings each year, and 2026 dates
+        are going now.
+      </p>
+      <a href="/contact" class="pill pill--solid">Start an enquiry</a>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .about {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    padding-block: clamp(3rem, 6vw, 5rem);
+  }
+
+  @media (max-width: 56rem) {
+    .about { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .about__prose {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 36rem;
+    font-size: var(--text-body);
+    line-height: 1.65;
+  }
+
+  .about__prose .accent { color: var(--color-coral); }
+
+  .portrait {
+    overflow: hidden;
+    border-radius: 1.25rem;
+    aspect-ratio: 4 / 5;
+  }
+
+  .portrait svg { width: 100%; height: 100%; }
+
+  .portrait__cap { margin-top: 0.75rem; line-height: 1.45; }
+
+  .facts { margin: 2rem 0 1.75rem; }
+
+  .facts__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding-block: 0.75rem;
+    border-bottom: 1px solid var(--color-rule-soft);
+  }
+
+  .facts__row:first-child { border-top: 1px solid var(--color-rule-soft); }
+
+  .facts dd { margin: 0; font-size: var(--text-meta); text-align: right; }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .cta p { font-size: var(--text-body); line-height: 1.6; }
+</style>

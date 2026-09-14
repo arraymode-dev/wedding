@@ -1,0 +1,255 @@
+---
+import Base from '~/layouts/Base.astro';
+import SuiteArt from '~/components/SuiteArt.astro';
+import WorkCard from '~/components/WorkCard.astro';
+import { projects } from '~/data/work';
+import type { Project } from '~/data/work';
+
+export function getStaticPaths() {
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+interface Props { project: Project }
+const { project } = Astro.props;
+
+const index = projects.findIndex((p) => p.slug === project.slug);
+const next = projects[(index + 1) % projects.length];
+const others = projects.filter((p) => p.slug !== project.slug).slice(0, 3);
+---
+
+<Base title={project.couple} description={project.summary}>
+  <article>
+    {/* ── Header ──────────────────────────────────────────────────── */}
+    <header class="ph shell">
+      <p class="t-micro" data-reveal>{project.couple} — {project.year}</p>
+      <h1 class="ph__title" data-reveal style="--reveal-delay:60ms">{project.title}</h1>
+    </header>
+
+    {/* ── Hero artwork ────────────────────────────────────────────── */}
+    <div class="shell">
+      <div class="hero" style={`--card-ground:${project.ground}`} data-reveal>
+        <SuiteArt variant={project.variant} class="hero__art" />
+      </div>
+    </div>
+
+    {/* ── Body + spec ─────────────────────────────────────────────── */}
+    <div class="shell">
+      <div class="body">
+        <div class="body__prose" data-reveal>
+          {project.body.map((para) => <p>{para}</p>)}
+        </div>
+
+        <aside class="body__spec" data-reveal style="--reveal-delay:100ms">
+          <dl class="spec">
+            <div class="spec__row">
+              <dt class="t-micro">Venue</dt>
+              <dd>{project.venue}</dd>
+            </div>
+            {
+              project.detail.map((d) => (
+                <div class="spec__row">
+                  <dt class="t-micro">{d.label}</dt>
+                  <dd>{d.value}</dd>
+                </div>
+              ))
+            }
+          </dl>
+
+          <div class="spec__pieces">
+            <p class="t-micro">In the suite</p>
+            <ul>
+              {project.pieces.map((piece) => <li>{piece}</li>)}
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    {/* ── Next ────────────────────────────────────────────────────── */}
+    <div class="shell">
+      <hr class="rule" />
+      <nav class="next" aria-label="Next project">
+        <div>
+          <p class="t-micro">Next project</p>
+          <a href={`/work/${next.slug}`} class="next__link link-wipe">{next.couple}</a>
+        </div>
+        <a href="/work" class="pill">All work</a>
+      </nav>
+      <hr class="rule" />
+    </div>
+
+    {/* ── More ────────────────────────────────────────────────────── */}
+    <section class="more shell">
+      <ul class="more__grid">
+        {others.map((p, i) => (
+          <li><WorkCard project={p} delay={i * 80} /></li>
+        ))}
+      </ul>
+    </section>
+
+    {/* ── CTA ─────────────────────────────────────────────────────── */}
+    <section class="shell cta">
+      <hr class="rule" />
+      <div class="cta__inner" data-reveal>
+        <p class="measure muted">
+          If something here is close to what you're imagining — or deliberately
+          nothing like it — that's a good place to start a conversation.
+        </p>
+        <a href="/contact" class="pill pill--solid">Start an enquiry</a>
+      </div>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .ph {
+    padding-top: clamp(3rem, 8vw, 5.5rem);
+    padding-bottom: clamp(2rem, 4vw, 3rem);
+  }
+
+  .ph__title {
+    margin-top: 1.25rem;
+    max-width: 16ch;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(2.25rem, 1.2rem + 4.6vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    color: var(--color-navy);
+  }
+
+  /* Hero uses the same drawing as the card, cropped wide. */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-card);
+    background: var(--card-ground);
+    aspect-ratio: 16 / 10;
+  }
+
+  .hero :global(.hero__art) {
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (max-width: 40rem) {
+    .hero { aspect-ratio: 4 / 5; }
+  }
+
+  /* — Body ————————————————————————————————————————————————— */
+  .body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 19rem);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    padding-block: clamp(3rem, 6vw, 5rem);
+  }
+
+  @media (max-width: 56rem) {
+    .body { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .body__prose {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 34rem;
+    font-size: var(--text-body);
+    line-height: 1.65;
+  }
+
+  /* — Spec ————————————————————————————————————————————————— */
+  .spec { margin: 0; }
+
+  .spec__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1.5rem;
+    padding-block: 0.75rem;
+    border-bottom: 1px solid var(--color-rule-soft);
+  }
+
+  .spec__row:first-child { border-top: 1px solid var(--color-rule-soft); }
+
+  .spec dt { flex: none; }
+
+  .spec dd {
+    margin: 0;
+    font-size: var(--text-meta);
+    text-align: right;
+    color: var(--color-ink);
+  }
+
+  .spec__pieces { margin-top: 2rem; }
+
+  .spec__pieces ul {
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .spec__pieces li {
+    font-size: var(--text-meta);
+    line-height: 1.5;
+    color: var(--color-ink-soft);
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .spec__pieces li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--color-coral);
+  }
+
+  /* — Next ————————————————————————————————————————————————— */
+  .next {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: 2rem;
+  }
+
+  .next__link {
+    display: inline-block;
+    margin-top: 0.625rem;
+    font-family: var(--font-serif);
+    font-size: clamp(1.75rem, 1.2rem + 2.4vw, 3rem);
+    line-height: 1;
+    color: var(--color-navy);
+  }
+
+  /* — More ————————————————————————————————————————————————— */
+  .more__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: clamp(1.5rem, 3vw, 2.5rem) clamp(1rem, 2vw, 1.5rem);
+    margin: 0;
+    padding: clamp(2.5rem, 5vw, 3.5rem) 0;
+    list-style: none;
+  }
+
+  /* — CTA —————————————————————————————————————————————————— */
+  .cta__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-block: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .cta__inner p { font-size: var(--text-body); line-height: 1.6; }
+</style>

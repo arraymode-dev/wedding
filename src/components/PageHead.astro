@@ -1,0 +1,44 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  intro?: string;
+}
+const { eyebrow, title, intro } = Astro.props;
+---
+
+<header class="ph">
+  <div class="shell">
+    <p class="t-micro" data-reveal>{eyebrow}</p>
+    <h1 class="ph__title" data-reveal style="--reveal-delay:60ms">
+      <Fragment set:html={title} />
+    </h1>
+    {intro && <p class="ph__intro measure-wide muted" data-reveal style="--reveal-delay:120ms">{intro}</p>}
+  </div>
+</header>
+
+<style>
+  .ph {
+    padding-top: clamp(3rem, 8vw, 6rem);
+    padding-bottom: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .ph__title {
+    margin-top: 1.25rem;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(2.5rem, 1.2rem + 5.6vw, 5.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.025em;
+    color: var(--color-navy);
+    max-width: 18ch;
+  }
+
+  .ph__title :global(.accent) { color: var(--color-coral); }
+
+  .ph__intro {
+    margin-top: 1.75rem;
+    font-size: var(--text-body);
+    line-height: 1.62;
+  }
+</style>
