@@ -155,17 +155,22 @@ import { services } from '~/data/services';
 <script>
   // Until a form endpoint is wired up, intercept the submit and surface the
   // fallback note rather than navigating to a dead action.
-  const form = document.querySelector<HTMLFormElement>('[data-form]');
-  const note = document.querySelector<HTMLElement>('[data-form-note]');
+  function setupForm() {
+    const form = document.querySelector<HTMLFormElement>('[data-form]');
+    const note = document.querySelector<HTMLElement>('[data-form-note]');
+    if (!form) return;
 
-  form?.addEventListener('submit', (event) => {
-    if (form.getAttribute('action') !== '#') return;
-    event.preventDefault();
-    if (note) {
-      note.hidden = false;
-      note.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  });
+    form.addEventListener('submit', (event) => {
+      if (form.getAttribute('action') !== '#') return;
+      event.preventDefault();
+      if (note) {
+        note.hidden = false;
+        note.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
+
+  document.addEventListener('astro:page-load', setupForm);
 </script>
 
 <style>

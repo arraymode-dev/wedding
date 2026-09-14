@@ -1,0 +1,327 @@
+---
+/**
+ * Shader-driven page transition — a bending mask.
+ *
+ * A single full-screen triangle is masked by a horizontal edge that sweeps
+ * vertically. The edge is bowed by `sin(uv.x · π) · uPower`, and uPower runs
+ * 0 → 1 → 0 across the sweep, so the mask bends out as it travels and flattens
+ * again as it lands.
+ *
+ * The technique is Jesper Landberg's "WebGL bending mask transition"
+ * (https://codepen.io/ReGGae/pen/rNxpVEd), ported to drive Astro navigation:
+ * GSAP's timelines are hand-rolled here to avoid the dependency, and the
+ * durations are shortened from the demo's 1.25s so navigation still feels
+ * responsive.
+ *
+ * The canvas survives navigation via `transition:persist`, so the WebGL
+ * context is created once for the session rather than per page.
+ */
+---
+
+<div class="morph" data-morph transition:persist="fold-morph" aria-hidden="true">
+  <canvas data-morph-canvas></canvas>
+</div>
+
+<script>
+  declare global {
+    interface Window {
+      __foldMorph?: boolean;
+    }
+  }
+
+  /* three's WebGLRenderer drags in most of the library, so it is imported
+     dynamically and only once the page is idle. Until it lands, navigation
+     simply happens without the transition — which is the same graceful path
+     taken when WebGL is unavailable or motion is reduced. */
+  if (!window.__foldMorph) {
+    window.__foldMorph = true;
+    const whenIdle: (cb: () => void) => void =
+      typeof window.requestIdleCallback === 'function'
+        ? (cb) => window.requestIdleCallback(cb, { timeout: 1500 })
+        : (cb) => window.setTimeout(cb, 300);
+
+    whenIdle(() => {
+      void setupMorph();
+    });
+  }
+
+  async function setupMorph() {
+    const host = document.querySelector<HTMLElement>('[data-morph]');
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-morph-canvas]');
+    if (!host || !canvas) return;
+
+    // With reduced motion the navigation simply happens, uncovered.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const {
+      WebGLRenderer,
+      Scene,
+      OrthographicCamera,
+      ShaderMaterial,
+      BufferGeometry,
+      BufferAttribute,
+      Mesh,
+    } = await import('../lib/three');
+
+    let renderer: InstanceType<typeof WebGLRenderer>;
+    try {
+      renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true });
+    } catch {
+      return; // No WebGL — navigate without the transition.
+    }
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+
+    /* — Mask colour ——————————————————————————————————————————
+       The mask takes the ground of whichever card was clicked, so the sweep
+       carries that project's colour into its page. Anything else — nav,
+       footer, buttons — falls back to the studio navy. */
+
+    /** #2e3279, normalised. */
+    const NAVY = [0.18, 0.196, 0.475];
+
+    /** Resolve any CSS colour to normalised RGB via a 1×1 canvas readback. */
+    function readColor(css: string): number[] | null {
+      try {
+        const el = document.createElement('canvas');
+        el.width = 1;
+        el.height = 1;
+        const ctx = el.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return null;
+
+        ctx.fillStyle = '#000';
+        ctx.fillStyle = css;
+        ctx.fillRect(0, 0, 1, 1);
+
+        const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+        if (a === 0) return null;
+        return [r / 255, g / 255, b / 255];
+      } catch {
+        return null;
+      }
+    }
+
+    /**
+     * The card's ground is the colour the artwork sits on, and the colour the
+     * card reads as at a glance — so it is what the mask samples. Reading the
+     * computed background is exact and instant; rasterising the inline SVG to
+     * average its pixels would cost far more to land on the same answer.
+     *
+     * Leaving a project page with no card involved — "All work", the header,
+     * the next-project link — carries that page's own tint instead, so the
+     * colour stays continuous on the way out as well as on the way in.
+     */
+    function maskColorFor(source: Element | null | undefined): number[] {
+      const frame = source?.closest?.('.card')?.querySelector('.card__frame');
+      if (frame) {
+        const bg = window.getComputedStyle(frame).backgroundColor;
+        return readColor(bg) ?? NAVY.slice();
+      }
+
+      const tinted = document.querySelector('[data-page-tint]');
+      if (tinted) {
+        const bg = window.getComputedStyle(tinted).backgroundColor;
+        return readColor(bg) ?? NAVY.slice();
+      }
+
+      return NAVY.slice();
+    }
+
+    const scene = new Scene();
+
+    let ww = window.innerWidth;
+    let wh = window.innerHeight;
+
+    const camera = new OrthographicCamera(-ww / 2, ww / 2, wh / 2, -wh / 2, 1, 100);
+    camera.lookAt(scene.position);
+    camera.position.z = 1;
+
+    /* One oversized triangle rather than a quad: it covers the viewport with
+       three vertices and no diagonal seam through the middle. */
+    const geometry = new BufferGeometry();
+    geometry.setAttribute(
+      'position',
+      new BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3),
+    );
+    geometry.setAttribute(
+      'uv',
+      new BufferAttribute(new Float32Array([0, 0, 2, 0, 0, 2]), 2),
+    );
+
+    const material = new ShaderMaterial({
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      uniforms: {
+        uProgress: { value: 0 },
+        /** How far the mask edge is bowed, 0 flat to 1 fully bent. */
+        uPower: { value: 0 },
+        /** Flips the sweep so covering and revealing travel the same way. */
+        uOut: { value: true },
+        /** Mask colour — the studio navy, or the clicked card's ground. */
+        uColor: { value: NAVY.slice() },
+      },
+      vertexShader: /* glsl */ `
+        precision highp float;
+        varying vec2 vUv;
+
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        precision highp float;
+
+        uniform float uProgress;
+        uniform float uPower;
+        uniform bool uOut;
+        uniform vec3 uColor;
+
+        varying vec2 vUv;
+
+        #define M_PI 3.1415926535897932384626433832795
+
+        void main() {
+          vec2 uv = vUv;
+
+          // Bow the mask edge: the middle of the screen leads, the sides lag.
+          uv.y -= (sin(uv.x * M_PI) * uPower) * 0.25;
+
+          if (!uOut) uv.y = 1.0 - uv.y;
+
+          // fwidth keeps the edge one pixel wide at any resolution.
+          float t = smoothstep(uv.y - fwidth(uv.y), uv.y, uProgress);
+
+          gl_FragColor = vec4(uColor, t);
+        }
+      `,
+    });
+
+    const triangle = new Mesh(geometry, material);
+    triangle.scale.set(ww / 2, wh / 2, 1);
+    triangle.frustumCulled = false;
+    scene.add(triangle);
+
+    function resize() {
+      ww = window.innerWidth;
+      wh = window.innerHeight;
+
+      camera.left = -ww / 2;
+      camera.right = ww / 2;
+      camera.top = wh / 2;
+      camera.bottom = -wh / 2;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(ww, wh, false);
+      triangle.scale.set(ww / 2, wh / 2, 1);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    /* — Timing ————————————————————————————————————————————————
+       The demo uses GSAP: uProgress on a 1.25s power3.inOut, and a nested
+       linear timeline taking uPower 0 → 1 → 0 over 1s. Both are rolled by
+       hand below, shortened so a navigation doesn't stall. */
+
+    /** GSAP's power3.inOut — quartic, not cubic. */
+    const easeInOutQuart = (t: number) =>
+      t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+
+    const SWEEP = 720; // ms for uProgress
+    const BEND = 580; // ms for the 0 → 1 → 0 bend
+
+    let frame = 0;
+
+    function run(from: number, to: number, out: boolean) {
+      return new Promise<void>((resolve) => {
+        cancelAnimationFrame(frame);
+
+        material.uniforms.uOut.value = out;
+        host!.classList.add('is-active');
+
+        const started = performance.now();
+
+        const step = () => {
+          const elapsed = performance.now() - started;
+
+          const t = Math.min(elapsed / SWEEP, 1);
+          material.uniforms.uProgress.value =
+            from + (to - from) * easeInOutQuart(t);
+
+          const b = Math.min(elapsed / BEND, 1);
+          material.uniforms.uPower.value = b < 0.5 ? b * 2 : 2 - b * 2;
+
+          renderer.render(scene, camera);
+
+          if (t < 1) {
+            frame = requestAnimationFrame(step);
+          } else {
+            resolve();
+          }
+        };
+
+        frame = requestAnimationFrame(step);
+      });
+    }
+
+    /* — Astro navigation lifecycle ————————————————————————————
+       The mask covers before the new document is fetched and swapped in,
+       then uncovers once it has painted. `uOut` flips between the two so the
+       edge keeps travelling the same way rather than doubling back. */
+    document.addEventListener('astro:before-preparation', (event) => {
+      const ev = event as Event & {
+        loader: () => Promise<void>;
+        sourceElement?: Element;
+      };
+
+      material.uniforms.uColor.value = maskColorFor(ev.sourceElement);
+
+      const original = ev.loader;
+      ev.loader = async () => {
+        await run(0, 1, true);
+        await original();
+      };
+    });
+
+    document.addEventListener('astro:after-swap', () => {
+      // uColor is deliberately left alone here: the reveal must use exactly
+      // the colour the cover was drawn in, or the mask changes hue mid-sweep.
+      requestAnimationFrame(() => {
+        void run(1, 0, false).then(() => {
+          host!.classList.remove('is-active');
+        });
+      });
+    });
+  }
+</script>
+
+<style is:global>
+  .morph {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .morph.is-active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .morph canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* The shader is the transition; suppress the router's own cross-fade. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+</style>

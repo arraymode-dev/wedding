@@ -1,0 +1,185 @@
+---
+import Logo from '~/components/Logo.astro';
+import { site } from '~/data/site';
+
+/**
+ * Opening curtain.
+ *
+ * A solid sheet covers the viewport, holds, then lifts away with a bowed
+ * trailing edge — a physical sheet being drawn up rather than a slide or a
+ * fade. The mark inside leaves slightly ahead of the sheet, which is what
+ * gives the move its depth.
+ *
+ * Deliberately pure CSS:
+ *   - it has to cover before first paint, so it cannot wait on the lazily
+ *     loaded WebGL chunk;
+ *   - with no JS the sheet still lifts, rather than sealing the page shut;
+ *   - only `transform` and `opacity` animate, so it stays composited and
+ *     smooth on phones.
+ *
+ * `transition:persist` keeps this exact element across client-side
+ * navigation. Its animation has already finished, so it stays out of the way
+ * — the curtain plays on a real page load and never on an in-site link.
+ */
+---
+
+<div class="intro" data-intro aria-hidden="true">
+  <div class="intro__sheet">
+    <div class="intro__mark">
+      <Logo height="clamp(1.75rem, 5vw, 3rem)" color="var(--color-coral)" />
+      <p class="intro__tag">{site.tagline}</p>
+    </div>
+  </div>
+</div>
+
+{/* Insurance: if the animation never runs, the sheet still goes away. */}
+<script is:inline>
+  setTimeout(function () {
+    var el = document.querySelector('[data-intro]');
+    if (el) el.style.display = 'none';
+  }, 3000);
+</script>
+
+<style>
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: hidden;
+    /* Blocks interaction while covering; the end state removes it. */
+    animation: intro-done var(--intro-dur) steps(1, end) forwards;
+
+    --intro-dur: 1850ms;
+    /* Slow to commit, then decisive — the weight is what reads as cinematic. */
+    --intro-ease: cubic-bezier(0.76, 0, 0.18, 1);
+    --intro-bow: 24vh;
+  }
+
+  .intro__sheet {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--color-navy);
+    will-change: transform;
+    animation: intro-sheet var(--intro-dur) var(--intro-ease) forwards;
+  }
+
+  /* The trailing edge. An ellipse hanging below the sheet, scaled from flat
+     to bowed and back, so the sheet's bottom edge bends as it is drawn up. */
+  .intro__sheet::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: -30%;
+    width: 160%;
+    height: var(--intro-bow);
+    background: inherit;
+    border-radius: 0 0 50% 50% / 0 0 100% 100%;
+    transform-origin: 50% 0;
+    transform: scaleY(0);
+    will-change: transform;
+    animation: intro-bow var(--intro-dur) var(--intro-ease) forwards;
+  }
+
+  .intro__mark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.125rem;
+    padding-inline: 1.5rem;
+    text-align: center;
+    will-change: transform, opacity;
+    animation: intro-mark var(--intro-dur) var(--intro-ease) forwards;
+  }
+
+  .intro__tag {
+    margin: 0;
+    font-size: var(--text-meta);
+    letter-spacing: 0.02em;
+    color: color-mix(in oklab, #fff 62%, transparent);
+  }
+
+  /* — Timeline ———————————————————————————————————————————————
+     0—32%   hold, mark settles in
+     32—55%  the bottom edge bows out as the sheet begins to travel
+     55—100% the sheet clears the viewport and the edge flattens */
+
+  @keyframes intro-sheet {
+    0%,
+    32% {
+      transform: translateY(0);
+    }
+    100% {
+      /* Past 100% of the sheet plus the bow hanging beneath it. */
+      transform: translateY(-126%);
+    }
+  }
+
+  @keyframes intro-bow {
+    0%,
+    30% {
+      transform: scaleY(0);
+    }
+    56% {
+      transform: scaleY(1);
+    }
+    100% {
+      transform: scaleY(0.05);
+    }
+  }
+
+  @keyframes intro-mark {
+    0% {
+      opacity: 0;
+      transform: translateY(1.25rem);
+    }
+    20%,
+    34% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Leaves ahead of the sheet — the parallax is what gives it depth. */
+    62% {
+      opacity: 0;
+      transform: translateY(-4rem);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-4rem);
+    }
+  }
+
+  @keyframes intro-done {
+    0% {
+      visibility: visible;
+    }
+    100% {
+      visibility: hidden;
+    }
+  }
+
+  /* Shorter travel on phones, where the viewport is tall and narrow. */
+  @media (max-width: 40rem) {
+    .intro {
+      --intro-dur: 1600ms;
+      --intro-bow: 14vh;
+    }
+    @keyframes intro-sheet {
+      0%,
+      32% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(-116%);
+      }
+    }
+  }
+
+  /* No curtain at all when motion is reduced. */
+  @media (prefers-reduced-motion: reduce) {
+    .intro {
+      display: none;
+    }
+  }
+</style>

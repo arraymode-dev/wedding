@@ -22,14 +22,23 @@ import Logo from '~/components/Logo.astro';
 
 <script>
   // The bar is transparent over the top of the page and only frosts once
-  // content has actually scrolled beneath it.
-  const hdr = document.querySelector<HTMLElement>('[data-hdr]');
+  // content has actually scrolled beneath it. Re-bound after each navigation,
+  // since the router swaps the header out.
+  let detach: (() => void) | null = null;
 
-  if (hdr) {
+  function setupHeader() {
+    detach?.();
+
+    const hdr = document.querySelector<HTMLElement>('[data-hdr]');
+    if (!hdr) return;
+
     const sync = () => hdr.classList.toggle('is-stuck', window.scrollY > 8);
     sync();
     window.addEventListener('scroll', sync, { passive: true });
+    detach = () => window.removeEventListener('scroll', sync);
   }
+
+  document.addEventListener('astro:page-load', setupHeader);
 </script>
 
 <style>

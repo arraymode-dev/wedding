@@ -1,7 +1,10 @@
 ---
+import { ClientRouter } from 'astro:transitions';
 import '~/styles/global.css';
 import Nav from '~/components/Nav.astro';
 import Footer from '~/components/Footer.astro';
+import PageMorph from '~/components/PageMorph.astro';
+import Intro from '~/components/Intro.astro';
 
 interface Props {
   title: string;
@@ -73,10 +76,14 @@ const orgSchema = {
     <script is:inline>
       document.documentElement.classList.add('js-reveal');
     </script>
+
+    <ClientRouter />
   </head>
 
   <body class={bodyClass}>
     <a href="#main" class="skip-link">Skip to content</a>
+    <Intro transition:persist="intro" />
+    <PageMorph />
     <Nav />
     <main id="main">
       <slot />
@@ -85,12 +92,20 @@ const orgSchema = {
 
     <script>
       // Reveal-on-scroll. Each element fades up once, then stops being watched.
-      const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Runs on first paint and again after every client-side navigation.
+      let revealObserver: IntersectionObserver | null = null;
 
-      if (reduced || !('IntersectionObserver' in window)) {
-        items.forEach((el) => el.classList.add('is-revealed'));
-      } else {
+      function setupReveal() {
+        revealObserver?.disconnect();
+
+        const items = document.querySelectorAll<HTMLElement>('[data-reveal]');
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (reduced || !('IntersectionObserver' in window)) {
+          items.forEach((el) => el.classList.add('is-revealed'));
+          return;
+        }
+
         const io = new IntersectionObserver(
           (entries) => {
             for (const entry of entries) {
@@ -101,8 +116,12 @@ const orgSchema = {
           },
           { rootMargin: '0px 0px -12% 0px', threshold: 0.08 },
         );
+
         items.forEach((el) => io.observe(el));
+        revealObserver = io;
       }
+
+      document.addEventListener('astro:page-load', setupReveal);
     </script>
 
     <style>

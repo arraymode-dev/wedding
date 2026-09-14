@@ -1,0 +1,509 @@
+---
+import WorkCard from '~/components/WorkCard.astro';
+import { projects } from '~/data/work';
+
+interface Props {
+  label?: string;
+}
+const { label = 'Selected work' } = Astro.props;
+---
+
+<section
+  class="barrel"
+  data-barrel
+  aria-label={label}
+  aria-roledescription="carousel"
+>
+  <div class="barrel__stage" data-barrel-stage>
+    {/*
+      Rendered flat and scrollable on the server. The client script lifts these
+      same elements into a three.js CSS3D scene when it can; if it can't — no
+      JS or reduced motion — this stays as the rail.
+    */}
+    <div class="rail barrel__flat" data-barrel-track>
+      {
+        projects.map((p, i) => (
+          <WorkCard project={p} width="clamp(16rem, 29vw, 26rem)" delay={i * 60} />
+        ))
+      }
+    </div>
+  </div>
+
+  <p class="barrel__hint t-meta faint" data-barrel-hint hidden aria-hidden="true">
+    <svg viewBox="0 0 28 10" width="28" height="10" fill="none" stroke="currentColor">
+      <path d="M2 5h24M2 5l3-3M2 5l3 3M26 5l-3-3M26 5l-3 3" stroke-width="1.1" />
+    </svg>
+    Drag to spin
+  </p>
+</section>
+
+<script>
+  type ThreeBits = typeof import('../lib/three');
+
+  /* The router swaps the document without re-running this module, so the
+     barrel is built on every page load and torn down before each swap. */
+  let teardown: (() => void) | null = null;
+
+  function setupBarrel() {
+    teardown?.();
+    teardown = null;
+
+    const section = document.querySelector<HTMLElement>('[data-barrel]');
+    const stage = section?.querySelector<HTMLElement>('[data-barrel-stage]');
+    const track = section?.querySelector<HTMLElement>('[data-barrel-track]');
+    const hint = section?.querySelector<HTMLElement>('[data-barrel-hint]');
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cards = track
+      ? Array.from(track.querySelectorAll<HTMLElement>('.card'))
+      : [];
+
+    if (!section || !stage || !track || cards.length < 2 || reduced) return;
+    if (section.classList.contains('is-3d')) return;
+
+    let disposed = false;
+    let built: (() => void) | null = null;
+
+    /* three is only fetched once the rail is close to the viewport, so it
+       costs nothing on first paint. Until it arrives the server-rendered
+       scrolling rail is what visitors get, which is a perfectly good rail. */
+    const loader = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        loader.disconnect();
+
+        void (async () => {
+          const three = await import('../lib/three');
+          if (disposed) return;
+          built = buildBarrel(section, stage, cards, hint ?? null, three);
+        })();
+      },
+      { rootMargin: '600px' },
+    );
+
+    loader.observe(section);
+
+    teardown = () => {
+      disposed = true;
+      loader.disconnect();
+      built?.();
+      built = null;
+    };
+  }
+
+  document.addEventListener('astro:page-load', setupBarrel);
+  document.addEventListener('astro:before-swap', () => {
+    teardown?.();
+    teardown = null;
+  });
+
+  function buildBarrel(
+    section: HTMLElement,
+    stage: HTMLElement,
+    cards: HTMLElement[],
+    hint: HTMLElement | null,
+    three: ThreeBits,
+  ): () => void {
+    const { Scene, PerspectiveCamera, CSS3DRenderer, CSS3DObject } = three;
+
+    /* ────────────────────────────────────────────────────────────────
+       Geometry
+
+       The cards sit on the *inside* of the barrel: they lie along a
+       concave curve so that the further one travels from centre, the
+       more its outer edge swings toward the viewer.
+
+       Depth follows a parabola, which is the circle of radius `curve`
+       to the accuracy that matters over this arc:
+
+           z(u) = u² / (2 · curve)
+
+       and each card is laid tangent to it:
+
+           rotationY(u) = -atan(u / curve)
+
+       A long lens keeps that rotation dramatic without the near edges
+       ballooning in scale — the bend should read as curvature, not as
+       cards rushing at the camera.
+       ──────────────────────────────────────────────────────────────── */
+
+    const FOV = 20;
+    /** Card height as a share of the stage. */
+    const CARD_SCALE = 0.82;
+    /** Gap between card centres, as a multiple of card width. */
+    const SPACING = 1.16;
+    /** Curve radius as a multiple of stage width. Lower bends harder. */
+    const CURVE = 0.82;
+    /** How far the curve tightens at full speed, as a share of its radius. */
+    const CURVE_SQUEEZE = 0.46;
+    /** Speed, in px per frame, treated as "full tilt" for that squeeze. */
+    const SPEED_REF = 85;
+
+    /* A few projects spaced along the strip would leave gaps at the edges,
+       so the set is repeated until it fills the wrap. The repeats exist only
+       here, in the enhanced view — the server still renders one link per
+       project — and they are hidden from assistive tech and taken out of the
+       tab order, so each project is met exactly once. */
+    const MIN_FACES = 12;
+    const faces: HTMLElement[] = cards.slice();
+
+    while (faces.length < MIN_FACES) {
+      for (const original of cards) {
+        const clone = original.cloneNode(true) as HTMLElement;
+        clone.setAttribute('aria-hidden', 'true');
+        clone.setAttribute('tabindex', '-1');
+        clone.dataset.clone = 'true';
+        faces.push(clone);
+      }
+    }
+
+    const scene = new Scene();
+    const camera = new PerspectiveCamera(FOV, 1, 1, 40000);
+
+    const renderer = new CSS3DRenderer();
+    renderer.domElement.className = 'barrel__scene';
+    stage.appendChild(renderer.domElement);
+
+    const objects = faces.map((el) => {
+      el.classList.add('card--3d');
+      // The reveal transition would fight the 3D transform, so settle it now.
+      el.classList.add('is-revealed');
+      el.removeAttribute('data-reveal');
+      return new CSS3DObject(el);
+    });
+    objects.forEach((o) => scene.add(o));
+
+    section.classList.add('is-3d');
+    if (hint) hint.hidden = false;
+
+    /* — Layout ———————————————————————————————————————————————— */
+    let spacing = 400;
+    let curve = 1600;
+    let strip = spacing * faces.length;
+    let visibleHalf = 800;
+
+    function layout() {
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+      if (!w || !h) return;
+
+      const cardH = Math.round(h * CARD_SCALE);
+      const cardW = Math.round(cardH * 0.69);
+
+      spacing = cardW * SPACING;
+      strip = spacing * faces.length;
+      curve = w * CURVE;
+      // Everything past roughly one card beyond the stage edge is faded out.
+      visibleHalf = w / 2 + cardW;
+
+      for (const el of faces) {
+        el.style.width = `${cardW}px`;
+        el.style.height = `${cardH}px`;
+      }
+
+      camera.aspect = w / h;
+      // Distance that makes the centre card fill CARD_SCALE of the frame.
+      camera.position.z =
+        cardH / (2 * CARD_SCALE * Math.tan((FOV * Math.PI) / 360));
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    /* — Motion ————————————————————————————————————————————————
+       Offset is measured in pixels along the strip. Two sources are
+       summed: the section's travel through the viewport, and the
+       visitor's own dragging and throwing. */
+    let scrollOffset = 0;
+    let dragOffset = 0;
+    let velocity = 0;
+    let current = 0;
+    let previous = 0;
+    /** Smoothed px-per-frame travel, used to drive the curvature. */
+    let speed = 0;
+
+    function readScroll() {
+      const rect = section.getBoundingClientRect();
+      const span = window.innerHeight + rect.height;
+      const progress = Math.min(
+        Math.max((window.innerHeight - rect.top) / span, 0),
+        1,
+      );
+      // A little over two cards of roll across a full pass, centred so a card
+      // sits square to the viewer when the section is centred.
+      scrollOffset = -(progress - 0.5) * spacing * 2.4;
+    }
+
+    /* — Drag & throw ——————————————————————————————————————————
+       Pointer samples are kept with timestamps so the release velocity
+       reflects the last moments of the gesture rather than its average. */
+    type Sample = { x: number; t: number };
+
+    let dragging = false;
+    let captured = false;
+    let startX = 0;
+    let lastX = 0;
+    let swallowClick = false;
+    let samples: Sample[] = [];
+
+    /** Net pointer travel, in px, past which a press counts as a drag. */
+    const DRAG_SLOP = 10;
+
+    const MAX_THROW = 260; // px per frame, so a hard flick stays controllable
+
+    function sample(x: number) {
+      const t = performance.now();
+      samples.push({ x, t });
+      // Only the last 90ms matters for the throw.
+      while (samples.length > 2 && t - samples[0].t > 90) samples.shift();
+    }
+
+    stage.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      dragging = true;
+      captured = false;
+      startX = e.clientX;
+      lastX = e.clientX;
+      velocity = 0;
+      samples = [];
+      sample(e.clientX);
+      section.classList.add('is-dragging');
+      /* Deliberately no setPointerCapture here. Capturing on pointerdown
+         retargets the compatibility mouse events to the stage, so the
+         click lands on the stage instead of the card's <a> and the link
+         never opens. Capture is taken below, once a real drag begins. */
+    });
+
+    stage.addEventListener('pointermove', (e: PointerEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      dragOffset += dx;
+      sample(e.clientX);
+
+      // Past the slop this is a drag, not a click: take the pointer so
+      // tracking survives leaving the stage.
+      if (!captured && Math.abs(e.clientX - startX) > DRAG_SLOP) {
+        captured = true;
+        stage.setPointerCapture(e.pointerId);
+      }
+    });
+
+    function endDrag(e: PointerEvent) {
+      if (!dragging) return;
+      dragging = false;
+      swallowClick = captured || Math.abs(e.clientX - startX) > DRAG_SLOP;
+      section.classList.remove('is-dragging');
+      if (captured && stage.hasPointerCapture(e.pointerId)) {
+        stage.releasePointerCapture(e.pointerId);
+      }
+      captured = false;
+
+      // Throw: px/ms over the tail of the gesture, converted to px/frame.
+      const first = samples[0];
+      const last = samples[samples.length - 1];
+      if (first && last) {
+        const dt = last.t - first.t;
+        if (dt > 0) {
+          const perFrame = ((last.x - first.x) / dt) * 16.67;
+          velocity = Math.max(Math.min(perFrame, MAX_THROW), -MAX_THROW);
+        }
+      }
+      samples = [];
+    }
+
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+
+    // A drag that ends on a card shouldn't also follow its link — but an
+    // ordinary click, jitter and all, must always get through.
+    stage.addEventListener(
+      'click',
+      (e) => {
+        if (!swallowClick) return;
+        swallowClick = false;
+        e.preventDefault();
+        e.stopPropagation();
+      },
+      true,
+    );
+
+    // Trackpad horizontal swipes spin the barrel; vertical scrolling is left
+    // alone so the page still scrolls normally over the section.
+    stage.addEventListener(
+      'wheel',
+      (e: WheelEvent) => {
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+        e.preventDefault();
+        dragOffset -= e.deltaX;
+        velocity = -e.deltaX * 0.5;
+      },
+      { passive: false },
+    );
+
+    // Tabbing to a card brings it to the front by the shortest way round.
+    cards.forEach((el, i) => {
+      el.addEventListener('focusin', () => {
+        const target = -(scrollOffset + i * spacing);
+        let delta = (target - dragOffset) % strip;
+        if (delta > strip / 2) delta -= strip;
+        if (delta < -strip / 2) delta += strip;
+        dragOffset += delta;
+        velocity = 0;
+      });
+    });
+
+    /* — Frame —————————————————————————————————————————————————— */
+    function frame() {
+      if (!dragging && velocity !== 0) {
+        dragOffset += velocity;
+        velocity *= 0.94;
+        if (Math.abs(velocity) < 0.05) velocity = 0;
+      }
+
+      const target = scrollOffset + dragOffset;
+      // Follow the drag closely, but still smooth the scroll-driven part.
+      current += (target - current) * (dragging ? 0.34 : 0.12);
+
+      /* The faster the barrel travels, the tighter it curls: the radius is
+         mapped to speed, so a hard throw bends the cards much harder toward
+         the viewer and relaxes back as it coasts to a stop. */
+      const travelled = Math.abs(current - previous);
+      previous = current;
+      speed += (travelled - speed) * 0.14;
+
+      const t = Math.min(speed / SPEED_REF, 1);
+      // Ease so the curl builds late rather than reacting to every nudge.
+      const curl = t * t * (3 - 2 * t);
+      const curveNow = curve * (1 - CURVE_SQUEEZE * curl);
+
+      for (let i = 0; i < objects.length; i++) {
+        // Wrap each card into the strip, centred on the viewer.
+        let u = (i * spacing + current) % strip;
+        if (u < 0) u += strip;
+        if (u > strip / 2) u -= strip;
+
+        const obj = objects[i];
+        obj.position.set(u, 0, (u * u) / (2 * curveNow));
+        obj.rotation.y = -Math.atan(u / curveNow);
+
+        // Fade out toward the edges so cards never pop at the wrap point.
+        const d = Math.abs(u);
+        const fade =
+          1 - Math.min(Math.max((d - visibleHalf * 0.72) / (visibleHalf * 0.5), 0), 1);
+
+        const el = obj.element as HTMLElement;
+        el.style.opacity = `${fade}`;
+        el.style.visibility = fade <= 0.01 ? 'hidden' : 'visible';
+        el.style.pointerEvents = fade > 0.3 ? 'auto' : 'none';
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    /* — Loop ——————————————————————————————————————————————————
+       Only runs while the section is on screen. */
+    let running = false;
+    let raf = 0;
+
+    function tick() {
+      frame();
+      raf = requestAnimationFrame(tick);
+    }
+
+    function start() {
+      if (running) return;
+      running = true;
+      raf = requestAnimationFrame(tick);
+    }
+
+    function stop() {
+      running = false;
+      cancelAnimationFrame(raf);
+    }
+
+    const io = new IntersectionObserver(
+      ([entry]) => (entry.isIntersecting ? start() : stop()),
+      { rootMargin: '120px' },
+    );
+    io.observe(section);
+
+    const onResize = () => {
+      layout();
+      readScroll();
+    };
+
+    window.addEventListener('scroll', readScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+
+    layout();
+    readScroll();
+    // Seat the barrel where it belongs rather than spinning up to it.
+    current = scrollOffset + dragOffset;
+    previous = current;
+    start();
+
+    return () => {
+      stop();
+      io.disconnect();
+      window.removeEventListener('scroll', readScroll);
+      window.removeEventListener('resize', onResize);
+      renderer.domElement.remove();
+      section.classList.remove('is-3d');
+    };
+  }
+</script>
+
+<style>
+  .barrel {
+    position: relative;
+    z-index: 1;
+    margin-block: 0 clamp(2.5rem, 5vw, 4rem);
+  }
+
+  /* — 3D stage —————————————————————————————————————————————— */
+  .barrel.is-3d .barrel__stage {
+    position: relative;
+    height: clamp(26rem, 62vh, 40rem);
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .barrel.is-3d.is-dragging .barrel__stage { cursor: grabbing; }
+
+  /* Once the cards are lifted into the scene the rail is empty; collapse it. */
+  .barrel.is-3d .barrel__flat { display: none; }
+
+  .barrel :global(.barrel__scene) {
+    position: absolute;
+    inset: 0;
+  }
+
+  .barrel :global(.card--3d) {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform, opacity;
+  }
+
+  /* On the barrel the card fills the face it was given. */
+  .barrel :global(.card--3d .card__frame) {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  /* — Hint —————————————————————————————————————————————————— */
+  .barrel__hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+  }
+
+  .barrel__hint svg { flex: none; }
+
+  @media (hover: none) {
+    .barrel__hint { opacity: 0.75; }
+  }
+</style>
